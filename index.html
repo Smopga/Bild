@@ -546,11 +546,23 @@ function addImage(url, x, y, cb) {
   const img = new Image();
   img.crossOrigin = 'anonymous';
   img.onload = () => {
-    const maxW = stage.offsetWidth * 0.5;
+    const stageW = stage.offsetWidth, stageH = stage.offsetHeight;
+    const maxW = stageW * 0.6;
+    const maxH = stageH * 0.8;
+    // Target size for small images (pixel art): scale up to ~1/4 of stage width,
+    // preferring integer multiples so pixels stay crisp
+    const targetW = stageW * 0.25;
     let w = img.naturalWidth, h = img.naturalHeight;
+    if (w < targetW) {
+      const mult = Math.max(1, Math.floor(targetW / w));
+      w *= mult;
+      h *= mult;
+    }
+    // clamp to max size
     if (w > maxW) { const s = maxW / w; w *= s; h *= s; }
-    const px = x != null ? x - w/2 : (stage.offsetWidth/2 - w/2);
-    const py = y != null ? y - h/2 : (stage.offsetHeight/2 - h/2);
+    if (h > maxH) { const s = maxH / h; w *= s; h *= s; }
+    const px = x != null ? x - w/2 : (stageW/2 - w/2);
+    const py = y != null ? y - h/2 : (stageH/2 - h/2);
     const el = makeItem('image', px, py, w, h);
     const i = document.createElement('img');
     i.src = url;
