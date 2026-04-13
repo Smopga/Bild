@@ -1351,7 +1351,24 @@ async function renderItem(ctx, item, scale) {
     ctx.textBaseline = 'top';
     ctx.textAlign = align === 'center' ? 'center' : align === 'right' ? 'right' : 'left';
     const raw = tc.innerText || tc.textContent || '';
-    const lines = raw.split('\n');
+    const paragraphs = raw.split('\n');
+    const lines = paragraphs.flatMap(p => wrapLine(p));
+    function wrapLine(text) {
+  if (!text) return [''];
+  const words = text.split(/\s+/);
+  const out = [];
+  let line = '';
+  for (const word of words) {
+    const test = line ? line + ' ' + word : word;
+    if (ctx.measureText(test).width <= maxWidth || !line) line = test;
+    else {
+      out.push(line);
+      line = word;
+    }
+  }
+  if (line) out.push(line);
+  return out;
+}
     const lineHeight = fs * scale * 1.2;
     const tx = align === 'center' ? 0 : align === 'right' ? sw/2 : -sw/2;
     let ty = -sh/2;
