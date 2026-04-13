@@ -370,13 +370,46 @@ function renderImages() {
 }
 
 async function loadBuiltinImages() {
+  // Try three sources in order:
+  //  1. GitHub Contents API (auto-detect from URL when hosted on github.io)
+  //  2. images/manifest.json (if workflow built it)
+  //  3. Just silently fail
+  const imgExts = /\.(png|jpe?g|gif|webp|svg|bmp)$/i;
+
+  // (1) GitHub API — works automatically when hosted on <user>.github.io/<repo>/
+  const host = location.hostname;
+  const ghMatch = host.match(/^([^.]+)\.github\.io$/i);
+  if (ghMatch) {
+    const user = ghMatch[1];
+    // repo = first path segment; if none, it's a user.github.io root site
+    const seg = location.pathname.split('/').filter(Boolean);
+    const repo = seg[0] || user + '.github.io';
+    try {
+      const api = `https://api.github.com/repos/${user}/${repo}/contents/images`;
+      const r = await fetch(api, { cache: 'no-cache' });
+      if (r.ok) {
+        const list = await r.json();
+        if (Array.isArray(list)) {
+          const imgs = list.filter(f => f.type === 'file' && imgExts.test(f.name));
+          for (const f of imgs) {
+            // prefer download_url (raw.githubusercontent.com — has CORS)
+            const url = f.download_url || ('images/' + f.name);
+            imageCache.push({ name: f.name, url, builtin: true });
+          }
+          if (imgs.length) { renderImages(); return; }
+        }
+      }
+    } catch(e) { console.warn('GitHub API fetch failed', e); }
+  }
+
+  // (2) manifest.json fallback
   try {
     const r = await fetch('images/manifest.json', { cache: 'no-cache' });
     if (!r.ok) return;
     const list = await r.json();
     if (!Array.isArray(list)) return;
     for (const name of list) {
-      imageCache.push({ name, url: 'images/' + name, builtin: true });
+      if (imgExts.test(name)) imageCache.push({ name, url: 'images/' + name, builtin: true });
     }
     renderImages();
   } catch(e) { /* no manifest — fine */ }
