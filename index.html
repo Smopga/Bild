@@ -1338,65 +1338,76 @@ async function renderItem(ctx, item, scale) {
     }
     ctx.imageSmoothingEnabled = item.classList.contains('smooth');
     ctx.drawImage(img, -sw/2, -sh/2, sw, sh);
+
   } else if (type === 'text') {
     const tc = item.querySelector('.text-content');
     const fs = parseFloat(tc.style.fontSize) || 40;
-    const ffRaw = tc.style.fontFamily || 'sans-serif';
-    const ff = ffRaw; // keep quotes
+    const ff = tc.style.fontFamily || 'sans-serif';
     const color = tc.style.color || '#000';
     const align = tc.style.textAlign || 'left';
     const weight = tc.style.fontWeight || 'normal';
-   ctx.font = `${weight} ${fs * scale}px ${ff}`;
-ctx.fillStyle = color;
-ctx.textBaseline = 'top';
-ctx.textAlign = align === 'center' ? 'center' : align === 'right' ? 'right' : 'left';
 
-// ✅ ZUERST definieren
-const padding = 0;
-const maxWidth = sw - padding * 2;
+    ctx.font = `${weight} ${fs * scale}px ${ff}`;
+    ctx.fillStyle = color;
+    ctx.textBaseline = 'top';
+    ctx.textAlign = align === 'center' ? 'center' : align === 'right' ? 'right' : 'left';
 
-// ✅ DANN Funktion
-function wrapLine(text) {
-  if (!text) return [''];
-  const words = text.split(/\s+/);
-  const out = [];
-  let line = '';
-  for (const word of words) {
-    const test = line ? line + ' ' + word : word;
-    if (ctx.measureText(test).width <= maxWidth || !line) line = test;
-    else {
-      out.push(line);
-      line = word;
+    const padding = 0;
+    const maxWidth = sw - padding * 2;
+
+    function wrapLine(text) {
+      if (!text) return [''];
+      const words = text.split(/\s+/);
+      const out = [];
+      let line = '';
+      for (const word of words) {
+        const test = line ? line + ' ' + word : word;
+        if (ctx.measureText(test).width <= maxWidth || !line) line = test;
+        else {
+          out.push(line);
+          line = word;
+        }
+      }
+      if (line) out.push(line);
+      return out;
     }
-  }
-  if (line) out.push(line);
-  return out;
-}
 
-// ✅ ERST JETZT benutzen
-const raw = tc.innerText || tc.textContent || '';
-const paragraphs = raw.split('\n');
-const lines = paragraphs.flatMap(p => wrapLine(p));
+    const raw = tc.innerText || tc.textContent || '';
+    const paragraphs = raw.split('\n');
+    const lines = paragraphs.flatMap(p => wrapLine(p));
 
-const lineHeight = fs * scale * 1.2;
-const tx = align === 'center' ? 0 : align === 'right' ? sw/2 : -sw/2;
-let ty = -sh/2;
+    const lineHeight = fs * scale * 1.2;
+    const tx = align === 'center' ? 0 : align === 'right' ? sw/2 : -sw/2;
+    let ty = -sh/2;
 
-for (const line of lines) {
-  ctx.fillText(line, tx, ty);
-  ty += lineHeight;
-}
+    for (const line of lines) {
+      ctx.fillText(line, tx, ty);
+      ty += lineHeight;
+    }
+
+  } else if (type === 'circle') {
+    const fill = item.dataset.fill || '#6b8fff';
+    const stroke = item.dataset.stroke || '#000';
+    const strokeW = (parseFloat(item.dataset.strokeW) || 0) * scale;
+
     ctx.fillStyle = fill;
     ctx.beginPath();
-    ctx.ellipse(0, 0, sw/2, sh/2, 0, 0, Math.PI*2);
+    ctx.ellipse(0, 0, sw/2, sh/2, 0, 0, Math.PI * 2);
     ctx.fill();
-    if (strokeW > 0) { ctx.strokeStyle = stroke; ctx.lineWidth = strokeW; ctx.stroke(); }
+
+    if (strokeW > 0) {
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = strokeW;
+      ctx.stroke();
+    }
+
   } else if (type === 'triangle') {
     const fill = item.dataset.fill || '#6b8fff';
     const stroke = item.dataset.stroke || '#000';
     const strokeW = (parseFloat(item.dataset.strokeW) || 0) * scale;
     const mx = p => (p/100 - 0.5) * sw;
     const my = p => (p/100 - 0.5) * sh;
+
     ctx.fillStyle = fill;
     ctx.beginPath();
     ctx.moveTo(mx(50), my(5));
@@ -1404,11 +1415,18 @@ for (const line of lines) {
     ctx.lineTo(mx(5), my(95));
     ctx.closePath();
     ctx.fill();
-    if (strokeW > 0) { ctx.strokeStyle = stroke; ctx.lineWidth = strokeW; ctx.stroke(); }
+
+    if (strokeW > 0) {
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = strokeW;
+      ctx.stroke();
+    }
+
   } else if (type === 'line') {
     ctx.fillStyle = item.dataset.fill || '#6b8fff';
     ctx.fillRect(-sw/2, -sh/2, sw, sh);
   }
+
   ctx.restore();
 }
 
