@@ -63,6 +63,22 @@ button { font-family: inherit; font-size: inherit; color: inherit; cursor: point
 .thumb .del:hover { background: var(--danger); }
 .thumb .badge { position: absolute; top: 3px; left: 3px; background: rgba(107,143,255,0.9); color: #fff; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,0.4); }
 
+.search-wrap { position: relative; margin-bottom: 12px; display: flex; align-items: center; }
+.search-wrap .search-ico { position: absolute; left: 10px; font-size: 12px; color: var(--muted); pointer-events: none; }
+.search-wrap input { flex: 1; background: var(--panel2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 9px 30px 9px 30px; font-size: 12px; font-family: inherit; outline: none; transition: border 0.15s; }
+.search-wrap input:focus { border-color: var(--accent); }
+.search-wrap input::placeholder { color: var(--muted); }
+.search-wrap #img-search-clear { position: absolute; right: 6px; width: 22px; height: 22px; background: transparent; border: none; color: var(--muted); font-size: 16px; border-radius: 4px; display: none; }
+.search-wrap #img-search-clear.show { display: block; }
+.search-wrap #img-search-clear:hover { color: var(--text); background: var(--panel3); }
+
+.tool-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; }
+.tool-sq { aspect-ratio: 1; background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 20px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.tool-sq:hover { border-color: var(--accent); background: var(--panel3); transform: translateY(-1px); }
+.tool-sq span { line-height: 1; }
+
+.tool-btn.active { border-color: var(--accent); background: var(--accent-dim); color: var(--accent-hi); }
+
 .font-list { display: flex; flex-direction: column; gap: 6px; }
 .font-item { position: relative; padding: 12px 14px; background: var(--panel2); border-radius: 8px; border: 1px solid var(--border); font-size: 18px; cursor: pointer; word-break: break-all; transition: all 0.15s; }
 .font-item:hover { border-color: var(--accent); transform: translateX(2px); }
@@ -105,6 +121,20 @@ button { font-family: inherit; font-size: inherit; color: inherit; cursor: point
     radial-gradient(circle at 80% 100%, rgba(176,132,255,0.04), transparent 50%);
 }
 .stage { position: relative; background: #ffffff; aspect-ratio: 16/9; width: min(92%, 1400px); box-shadow: 0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px var(--border); overflow: hidden; touch-action: none; }
+.stage.paint-mode, .stage.paint-mode * { cursor: crosshair !important; }
+.stage.erase-mode, .stage.erase-mode * { cursor: cell !important; }
+.stage.picker-mode, .stage.picker-mode * { cursor: crosshair !important; }
+
+/* Paint toolbar popover */
+.paint-bar { position: fixed; left: 320px; top: 120px; background: var(--panel2); border: 1px solid var(--border-hi); border-radius: 10px; padding: 10px 14px; display: none; gap: 10px; align-items: center; box-shadow: 0 12px 40px rgba(0,0,0,0.6); z-index: 200; }
+.paint-bar.open { display: flex; }
+.paint-bar label { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.paint-bar input[type=range] { width: 100px; accent-color: var(--accent); }
+.paint-bar input[type=color] { width: 34px; height: 28px; border: 1px solid var(--border); background: var(--panel); border-radius: 5px; padding: 2px; }
+.paint-bar .size-preview { width: 30px; height: 30px; border-radius: 50%; background: var(--panel); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; }
+.paint-bar .size-preview .dot { background: currentColor; border-radius: 50%; }
+.paint-bar button { background: var(--panel); border: 1px solid var(--border); color: var(--text); padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+.paint-bar button:hover { border-color: var(--accent); }
 .stage.grid-on::before { content: ''; position: absolute; inset: 0; pointer-events: none; background-image: linear-gradient(rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.08) 1px, transparent 1px); background-size: 40px 40px; z-index: 1; }
 
 /* Snap guides */
@@ -178,6 +208,11 @@ button { font-family: inherit; font-size: inherit; color: inherit; cursor: point
     <label class="upload-btn">↑ Bilder hochladen
       <input type="file" id="img-upload" accept="image/*" multiple>
     </label>
+    <div class="search-wrap">
+      <span class="search-ico">🔍</span>
+      <input type="text" id="img-search" placeholder="Suchen…" autocomplete="off">
+      <button id="img-search-clear" title="Löschen">×</button>
+    </div>
     <div class="grid" id="img-grid"></div>
   </div>
 
@@ -192,12 +227,26 @@ button { font-family: inherit; font-size: inherit; color: inherit; cursor: point
   </div>
 
   <div class="panel" id="panel-tools">
-    <div class="section-title">Hinzufügen</div>
-    <button class="tool-btn" data-add="text"><span class="ico">T</span>Text</button>
-    <button class="tool-btn" data-add="rect"><span class="ico">▢</span>Rechteck</button>
-    <button class="tool-btn" data-add="circle"><span class="ico">●</span>Kreis</button>
-    <button class="tool-btn" data-add="triangle"><span class="ico">▲</span>Dreieck</button>
-    <button class="tool-btn" data-add="line"><span class="ico">━</span>Linie</button>
+    <div class="section-title">Formen</div>
+    <div class="tool-grid">
+      <button class="tool-sq" data-add="text" title="Text"><span>T</span></button>
+      <button class="tool-sq" data-add="rect" title="Rechteck"><span>▢</span></button>
+      <button class="tool-sq" data-add="circle" title="Kreis"><span>●</span></button>
+      <button class="tool-sq" data-add="triangle" title="Dreieck"><span>▲</span></button>
+      <button class="tool-sq" data-add="line" title="Linie"><span>━</span></button>
+      <button class="tool-sq" data-add="star" title="Stern"><span>★</span></button>
+      <button class="tool-sq" data-add="heart" title="Herz"><span>♥</span></button>
+      <button class="tool-sq" data-add="arrow" title="Pfeil"><span>➤</span></button>
+      <button class="tool-sq" data-add="bubble" title="Sprechblase"><span>💬</span></button>
+      <button class="tool-sq" data-add="pentagon" title="Pentagon"><span>⬠</span></button>
+      <button class="tool-sq" data-add="hexagon" title="Hexagon"><span>⬡</span></button>
+    </div>
+
+    <div class="section-title">Zeichnen</div>
+    <button class="tool-btn" id="tool-paint"><span class="ico">✎</span>Pinsel</button>
+    <button class="tool-btn" id="tool-erase"><span class="ico">⌫</span>Radiergummi</button>
+    <button class="tool-btn" id="tool-eyedropper"><span class="ico">💧</span>Farbpipette</button>
+
     <div class="section-title">Canvas</div>
     <button class="tool-btn" id="btn-grid"><span class="ico">#</span>Raster umschalten</button>
   </div>
@@ -241,6 +290,16 @@ button { font-family: inherit; font-size: inherit; color: inherit; cursor: point
       <button id="ctx-front" class="icon" title="Nach vorne">▲</button>
       <button id="ctx-back" class="icon" title="Nach hinten">▼</button>
       <button id="ctx-dup" class="icon" title="Duplizieren (Strg+D)">⧉</button>
+      <button id="ctx-shadow" class="icon" title="Schatten an/aus">☁</button>
+    </div>
+
+    <div class="group" id="ctx-aligngroup" style="display:none;">
+      <button class="icon" data-align="left" title="Links ausrichten">⇤</button>
+      <button class="icon" data-align="hcenter" title="Horizontal zentrieren">⇔</button>
+      <button class="icon" data-align="right" title="Rechts ausrichten">⇥</button>
+      <button class="icon" data-align="top" title="Oben ausrichten">⤒</button>
+      <button class="icon" data-align="vcenter" title="Vertikal zentrieren">⇕</button>
+      <button class="icon" data-align="bottom" title="Unten ausrichten">⤓</button>
     </div>
 
     <div class="spacer"></div>
@@ -265,6 +324,15 @@ button { font-family: inherit; font-size: inherit; color: inherit; cursor: point
   <div class="stage-wrap">
     <div class="stage" id="stage"></div>
   </div>
+</div>
+
+<!-- PAINT BAR -->
+<div class="paint-bar" id="paint-bar">
+  <label>Farbe <input type="color" id="paint-color" value="#000000"></label>
+  <label>Größe <input type="range" id="paint-size" min="1" max="80" value="8"></label>
+  <span id="paint-size-num" style="font-size:11px;color:var(--muted);min-width:28px;">8px</span>
+  <button id="paint-clear-layer">Ebene leeren</button>
+  <button id="paint-exit">Fertig</button>
 </div>
 
 <!-- CONTEXT MENU -->
@@ -338,12 +406,19 @@ document.querySelectorAll('.tab').forEach(t => t.onclick = () => {
 // IMAGES
 // ============================================================
 const imgGrid = document.getElementById('img-grid');
+const imgSearchInput = document.getElementById('img-search');
+const imgSearchClear = document.getElementById('img-search-clear');
 let imageCache = []; // { name, url, builtin }
+let imgFilter = '';
 
 function renderImages() {
   imgGrid.innerHTML = '';
+  const filter = imgFilter.toLowerCase().trim();
+  const filtered = filter ? imageCache.filter(i => i.name.toLowerCase().includes(filter)) : imageCache;
   if (!imageCache.length) { imgGrid.innerHTML = '<div class="empty">Noch keine Bilder</div>'; return; }
-  imageCache.forEach((img, idx) => {
+  if (!filtered.length) { imgGrid.innerHTML = '<div class="empty">Keine Treffer für "'+filter+'"</div>'; return; }
+  filtered.forEach(img => {
+    const idx = imageCache.indexOf(img);
     const d = document.createElement('div');
     d.className = 'thumb';
     d.draggable = true;
@@ -368,6 +443,19 @@ function renderImages() {
     imgGrid.appendChild(d);
   });
 }
+
+imgSearchInput.addEventListener('input', e => {
+  imgFilter = e.target.value;
+  imgSearchClear.classList.toggle('show', !!imgFilter);
+  renderImages();
+});
+imgSearchClear.onclick = () => {
+  imgSearchInput.value = '';
+  imgFilter = '';
+  imgSearchClear.classList.remove('show');
+  renderImages();
+  imgSearchInput.focus();
+};
 
 async function loadBuiltinImages() {
   // Try three sources in order:
@@ -596,6 +684,43 @@ function addText(x, y, opts = {}) {
   return el;
 }
 
+// SVG path generators (in 0..100 coordinate space)
+const SVG_PATHS = {
+  triangle: () => 'M50,5 L95,95 L5,95 Z',
+  star: () => {
+    const cx = 50, cy = 50, r = 47, ri = 19;
+    let d = '';
+    for (let i = 0; i < 10; i++) {
+      const a = (Math.PI * i) / 5 - Math.PI/2;
+      const rad = i % 2 === 0 ? r : ri;
+      d += (i === 0 ? 'M' : 'L') + (cx + rad * Math.cos(a)).toFixed(2) + ',' + (cy + rad * Math.sin(a)).toFixed(2) + ' ';
+    }
+    return d + 'Z';
+  },
+  heart: () => 'M50,90 C10,60 -5,25 50,30 C105,25 90,60 50,90 Z',
+  arrow: () => 'M0,35 L65,35 L65,15 L100,50 L65,85 L65,65 L0,65 Z',
+  bubble: () => 'M10,5 L85,5 Q95,5 95,15 L95,65 Q95,75 85,75 L40,75 L25,95 L30,75 L15,75 Q5,75 5,65 L5,15 Q5,5 15,5 Z',
+  pentagon: () => {
+    const cx=50, cy=50, r=47;
+    let d = '';
+    for (let i = 0; i < 5; i++) {
+      const a = (Math.PI * 2 * i) / 5 - Math.PI/2;
+      d += (i===0?'M':'L') + (cx + r * Math.cos(a)).toFixed(2) + ',' + (cy + r * Math.sin(a)).toFixed(2) + ' ';
+    }
+    return d + 'Z';
+  },
+  hexagon: () => {
+    const cx=50, cy=50, r=47;
+    let d = '';
+    for (let i = 0; i < 6; i++) {
+      const a = (Math.PI * 2 * i) / 6;
+      d += (i===0?'M':'L') + (cx + r * Math.cos(a)).toFixed(2) + ',' + (cy + r * Math.sin(a)).toFixed(2) + ' ';
+    }
+    return d + 'Z';
+  },
+};
+const PATH_SHAPES = Object.keys(SVG_PATHS);
+
 function addShape(kind, x, y, opts = {}) {
   const w = opts.w || 200, h = opts.h || (kind === 'line' ? 6 : 200);
   const px = x != null ? x : (stage.offsetWidth/2 - w/2);
@@ -606,16 +731,19 @@ function addShape(kind, x, y, opts = {}) {
   el.dataset.stroke = opts.stroke || '#000000';
   el.dataset.strokeW = opts.strokeW || '0';
   el.dataset.radius = opts.radius || '0';
-  if (kind === 'triangle') {
+  if (PATH_SHAPES.includes(kind)) {
     const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-    svg.setAttribute('viewBox','0 0 100 100'); svg.setAttribute('preserveAspectRatio','none');
+    svg.setAttribute('viewBox','0 0 100 100');
+    svg.setAttribute('preserveAspectRatio','none');
     svg.style.width = '100%'; svg.style.height = '100%';
-    const poly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
-    poly.setAttribute('points','50,5 95,95 5,95');
-    poly.setAttribute('fill', el.dataset.fill);
-    poly.setAttribute('stroke', el.dataset.stroke);
-    poly.setAttribute('stroke-width', el.dataset.strokeW);
-    svg.appendChild(poly);
+    svg.style.overflow = 'visible';
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', SVG_PATHS[kind]());
+    path.setAttribute('fill', el.dataset.fill);
+    path.setAttribute('stroke', el.dataset.stroke);
+    path.setAttribute('stroke-width', el.dataset.strokeW);
+    path.setAttribute('vector-effect', 'non-scaling-stroke');
+    svg.appendChild(path);
     inner.appendChild(svg);
   } else {
     const sh = document.createElement('div');
@@ -1029,9 +1157,9 @@ function applyShapeStyle() {
   selected.dataset.stroke = stroke;
   selected.dataset.strokeW = sw;
   selected.dataset.radius = rad;
-  if (selected.dataset.type === 'triangle') {
-    const poly = selected.querySelector('polygon');
-    if (poly) { poly.setAttribute('fill', fill); poly.setAttribute('stroke', stroke); poly.setAttribute('stroke-width', sw); }
+  if (PATH_SHAPES.includes(selected.dataset.type)) {
+    const path = selected.querySelector('path');
+    if (path) { path.setAttribute('fill', fill); path.setAttribute('stroke', stroke); path.setAttribute('stroke-width', sw); }
   } else {
     const sh = selected.querySelector('.shape');
     if (sh) {
