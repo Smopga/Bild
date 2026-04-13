@@ -1314,13 +1314,16 @@ async function renderItem(ctx, item, scale) {
   const y = parseFloat(item.style.top);
   const w = item.offsetWidth;
   const h = item.offsetHeight;
-  const cx = (x + w/2) * scale;
-  const cy = (y + h/2) * scale;
+
+  const cx = (x + w / 2) * scale;
+  const cy = (y + h / 2) * scale;
   const sw = w * scale;
   const sh = h * scale;
+
   const rot = (parseFloat(item.dataset.rot) || 0) * Math.PI / 180;
   const fx = item.dataset.flipX === '1' ? -1 : 1;
   const fy = item.dataset.flipY === '1' ? -1 : 1;
+
   const opacity = parseFloat(item.style.opacity || '1');
 
   ctx.save();
@@ -1333,19 +1336,27 @@ async function renderItem(ctx, item, scale) {
 
   if (type === 'image') {
     const img = item.querySelector('img');
+
     if (!img.complete || !img.naturalWidth) {
-      await new Promise(r => { img.onload = r; img.onerror = r; });
+      await new Promise(r => {
+        img.onload = r;
+        img.onerror = r;
+      });
     }
+
     ctx.imageSmoothingEnabled = item.classList.contains('smooth');
-    ctx.drawImage(img, -sw/2, -sh/2, sw, sh);
+    ctx.drawImage(img, -sw / 2, -sh / 2, sw, sh);
 
   } else if (type === 'text') {
     const tc = item.querySelector('.text-content');
+
     const fs = parseFloat(tc.style.fontSize) || 40;
     const ff = tc.style.fontFamily || 'sans-serif';
     const color = tc.style.color || '#000';
     const align = tc.style.textAlign || 'left';
     const weight = tc.style.fontWeight || 'normal';
+
+    const raw = tc.innerText || tc.textContent || '';
 
     ctx.font = `${weight} ${fs * scale}px ${ff}`;
     ctx.fillStyle = color;
@@ -1357,28 +1368,47 @@ async function renderItem(ctx, item, scale) {
 
     function wrapLine(text) {
       if (!text) return [''];
+
       const words = text.split(/\s+/);
       const out = [];
       let line = '';
+
       for (const word of words) {
         const test = line ? line + ' ' + word : word;
-        if (ctx.measureText(test).width <= maxWidth || !line) line = test;
-        else {
+
+        if (ctx.measureText(test).width <= maxWidth || !line) {
+          line = test;
+        } else {
           out.push(line);
           line = word;
         }
       }
+
       if (line) out.push(line);
+
       return out;
     }
 
-    const raw = tc.innerText || tc.textContent || '';
-    const paragraphs = raw.split('\n');
-    const lines = paragraphs.flatMap(p => wrapLine(p));
+    // ✅ FIX: stabile Zeilen + echte Leerzeilen behalten
+    const paragraphs = raw.split(/\r?\n/);
+
+    const lines = [];
+    for (const p of paragraphs) {
+      if (p.trim() === '') {
+        lines.push(''); // echte Leerzeile
+      } else {
+        lines.push(...wrapLine(p));
+      }
+    }
 
     const lineHeight = fs * scale * 1.2;
-    const tx = align === 'center' ? 0 : align === 'right' ? sw/2 : -sw/2;
-    let ty = -sh/2;
+
+    const tx =
+      align === 'center' ? 0 :
+      align === 'right' ? sw / 2 :
+      -sw / 2;
+
+    let ty = -sh / 2;
 
     for (const line of lines) {
       ctx.fillText(line, tx, ty);
@@ -1392,7 +1422,7 @@ async function renderItem(ctx, item, scale) {
 
     ctx.fillStyle = fill;
     ctx.beginPath();
-    ctx.ellipse(0, 0, sw/2, sh/2, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, sw / 2, sh / 2, 0, 0, Math.PI * 2);
     ctx.fill();
 
     if (strokeW > 0) {
@@ -1405,8 +1435,9 @@ async function renderItem(ctx, item, scale) {
     const fill = item.dataset.fill || '#6b8fff';
     const stroke = item.dataset.stroke || '#000';
     const strokeW = (parseFloat(item.dataset.strokeW) || 0) * scale;
-    const mx = p => (p/100 - 0.5) * sw;
-    const my = p => (p/100 - 0.5) * sh;
+
+    const mx = p => (p / 100 - 0.5) * sw;
+    const my = p => (p / 100 - 0.5) * sh;
 
     ctx.fillStyle = fill;
     ctx.beginPath();
@@ -1424,7 +1455,7 @@ async function renderItem(ctx, item, scale) {
 
   } else if (type === 'line') {
     ctx.fillStyle = item.dataset.fill || '#6b8fff';
-    ctx.fillRect(-sw/2, -sh/2, sw, sh);
+    ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
   }
 
   ctx.restore();
