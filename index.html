@@ -1353,6 +1353,8 @@ async function renderItem(ctx, item, scale) {
     const raw = tc.innerText || tc.textContent || '';
     const paragraphs = raw.split('\n');
     const lines = paragraphs.flatMap(p => wrapLine(p));
+    const padding = 0;
+const maxWidth = sw - padding * 2;
     function wrapLine(text) {
   if (!text) return [''];
   const words = text.split(/\s+/);
