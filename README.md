@@ -46,6 +46,19 @@ Diese GitHub-Version speichert **nichts** auf einem Server. Alles läuft im Brow
 
 Das Endergebnis speicherst du ganz normal als PNG über den Export-Button.
 
+## Eigene Standard-Bilder mitliefern
+
+Wirf Bilder einfach in den `images/`-Ordner — sie erscheinen automatisch in der Bilder-Sidebar mit einem ★-Badge und können nicht versehentlich gelöscht werden.
+
+```
+images/
+  logo.png
+  hintergrund.jpg
+  sprite.png
+```
+
+Beim GitHub Pages Deploy wird das Manifest automatisch gebaut. Lokal kannst du es mit `python build-manifest.py` aktualisieren.
+
 ## Deployment auf GitHub Pages
 
 1. Dieses Repo forken oder erstellen
